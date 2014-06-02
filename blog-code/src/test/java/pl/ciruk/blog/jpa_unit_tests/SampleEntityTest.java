@@ -5,16 +5,14 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static pl.ciruk.blog.jpa_unit_tests.CollectionMatchers.isInCollection;
+import static pl.ciruk.blog.jpa_unit_tests.SampleEntityMatchers.hasAmountLowerThan;
 
-import java.util.Collection;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,37 +69,5 @@ public class SampleEntityTest {
 					everyItem(isInCollection(mockEntities)),
 					everyItem(hasAmountLowerThan(amountThreshold))
 				));
-	}
-
-	private static <T> Matcher<T> isInCollection(Collection<T> collection) {
-		return new TypeSafeMatcher<T>() {
-
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("in collection: ")
-						.appendValueList("[", ",", "]", collection);
-			}
-
-			@Override
-			protected boolean matchesSafely(T item) {
-				return collection.contains(item);
-			}
-			
-		};
-	}
-	
-	private static Matcher<SampleEntity> hasAmountLowerThan(double threshold) {
-		return new TypeSafeMatcher<SampleEntity>() {
-			@Override
-			public void describeTo(Description description) {
-				description.appendText("having amount lower than")
-						.appendValue(threshold);
-			}
-			
-			@Override
-			protected boolean matchesSafely(SampleEntity item) {
-				return item.getAmount() < threshold;
-			}
-		};
 	}
 }
