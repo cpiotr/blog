@@ -23,6 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <start-class>pl.ciruk.blog.spring.Application</start-class>
         <java.version>1.8</java.version>
+        <ibm.mq.home><!-- PATH to IBM MQ installation --></ibm.mq.home>
     </properties>
 
     <build>
@@ -86,11 +87,15 @@
             <groupId>com.ibm</groupId>
             <artifactId>com.ibm.mq</artifactId>
             <version>5.3.07</version>
+            <scope>system</scope>
+            <systemPath>${ibm.mq.home}/lib/mq.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.ibm</groupId>
             <artifactId>com.ibm.mqjms</artifactId>
             <version>5.3.07</version>
+            <scope>system</scope>
+            <systemPath>${ibm.mq.home}/lib/mqjms.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
