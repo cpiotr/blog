@@ -19,50 +19,50 @@ import javax.jms.Session;
 @EnableConfigurationProperties(MQConfiguration.MQProperties.class)
 @EnableJms
 public class MQConfiguration {
-		@Inject
-		MQConfiguration.MQProperties properties;
+	@Inject
+	MQConfiguration.MQProperties properties;
 
-		@Bean(name = "DefaultJmsListenerContainerFactory")
-		public DefaultJmsListenerContainerFactory provideJmsListenerContainerFactory(PlatformTransactionManager transactionManager) {
-			DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-			factory.setConnectionFactory(connectionFactory());
-			factory.setTransactionManager(transactionManager);
-			factory.setConcurrency("5-10");
-			factory.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-			factory.setSessionTransacted(true);
-			return factory;
+	@Bean(name = "DefaultJmsListenerContainerFactory")
+	public DefaultJmsListenerContainerFactory provideJmsListenerContainerFactory(PlatformTransactionManager transactionManager) {
+		DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+		factory.setConnectionFactory(connectionFactory());
+		factory.setTransactionManager(transactionManager);
+		factory.setConcurrency("5-10");
+		factory.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+		factory.setSessionTransacted(true);
+		return factory;
+	}
+
+	@Bean(name = "JmsTemplate")
+	public JmsTemplate provideJmsTemplate() {
+		JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory());
+		return jmsTemplate;
+	}
+
+	private ConnectionFactory connectionFactory() {
+		ConnectionFactory factory = null;
+		try {
+			factory = new MQXAConnectionFactory();
+			factory.setHostName(properties.getHost());
+			factory.setPort(properties.getPort());
+			factory.setQueueManager(properties.getQueueManager());
+			factory.setChannel(properties.getChannel());
+			factory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
+		} catch (JMSException e) {
+			throw new RuntimeException(e);
 		}
 
-		@Bean(name = "JmsTemplate")
-		public JmsTemplate provideJmsTemplate() {
-			JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory());
-			return jmsTemplate;
-		}
+		return factory;
+	}
 
-		private ConnectionFactory connectionFactory() {
-			MQXAConnectionFactory factory = new MQXAConnectionFactory();
-			try {
-				factory.setHostName(properties.getHost());
-				factory.setPort(properties.getPort());
-				factory.setQueueManager(properties.getQueueManager());
-				factory.setChannel(properties.getChannel());
-				factory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
-			} catch (JMSException e) {
-				throw new RuntimeException(e);
-			}
-
-			return factory;
-		}
-
-		@ConfigurationProperties(prefix = "pl.ciruk.blog.mq")
-		@Data
-		public static class MQProperties {
-			String queueManager;
-			String host;
-			int port;
-			String channel;
-			String incomingQueue;
-			String outgoingQueue;
-		}
+	@ConfigurationProperties(prefix = "pl.ciruk.blog.mq")
+	@Data
+	public static class MQProperties {
+		String queueManager;
+		String host;
+		int port;
+		String channel;
+		String incomingQueue;
+		String outgoingQueue;
 	}
 }
