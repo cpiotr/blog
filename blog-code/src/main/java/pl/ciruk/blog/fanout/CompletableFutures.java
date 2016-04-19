@@ -9,6 +9,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 public class CompletableFutures {
@@ -21,7 +22,7 @@ public class CompletableFutures {
 				.map(mapper -> supplyAsync(
 						() -> mapper.apply(input))) // from F to CompletableFuture<T>
 				.map(cf -> cf.thenApply(Stream::of))  // from CompletableFuture<T> to CompletableFuture<Stream<T>>
-				.reduce(CompletableFuture.completedFuture(Stream.empty()), combineUsing(Stream::concat, executorService));
+				.reduce(completedFuture(Stream.empty()), combineUsing(Stream::concat, executorService));
 		return reduce;
 	}
 
