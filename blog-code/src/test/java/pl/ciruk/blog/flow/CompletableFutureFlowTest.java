@@ -1,5 +1,6 @@
 package pl.ciruk.blog.flow;
 
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -13,11 +14,11 @@ import java.util.concurrent.TimeUnit;
 public class CompletableFutureFlowTest {
 
     public static final int POOL_SIZE = 4;
+    private ExecutorService pool;
 
     @Test
     public void testFlowWithCommonForkJoinPool() throws Exception {
-        ExecutorService pool = ForkJoinPool.commonPool();
-
+        pool = ForkJoinPool.commonPool();
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
         for (int i = 0; i < 20; i++) {
@@ -26,14 +27,11 @@ public class CompletableFutureFlowTest {
         }
 
         futures.forEach(CompletableFutureFlow::getFuture);
-
-        pool.shutdown();
-        pool.awaitTermination(1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testFlowWithFixedThreadPool() throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(POOL_SIZE);
+        pool = Executors.newFixedThreadPool(POOL_SIZE);
 
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
@@ -43,14 +41,11 @@ public class CompletableFutureFlowTest {
         }
 
         futures.forEach(CompletableFutureFlow::getFuture);
-
-        pool.shutdown();
-        pool.awaitTermination(1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testFlowWithCustomForkJoinPool() throws Exception {
-        ExecutorService pool = new ForkJoinPool(POOL_SIZE);
+        pool = new ForkJoinPool(POOL_SIZE);
 
         List<CompletableFuture<Integer>> futures = new ArrayList<>();
 
@@ -60,7 +55,10 @@ public class CompletableFutureFlowTest {
         }
 
         futures.forEach(CompletableFutureFlow::getFuture);
+    }
 
+    @After
+    public void cleanUp() throws InterruptedException {
         pool.shutdown();
         pool.awaitTermination(1, TimeUnit.SECONDS);
     }
