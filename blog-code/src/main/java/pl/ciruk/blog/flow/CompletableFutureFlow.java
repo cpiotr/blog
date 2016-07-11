@@ -6,8 +6,6 @@ import java.util.concurrent.ExecutorService;
 
 public class CompletableFutureFlow {
 
-    public static final int MAXIMUM_POOL_SIZE = 4;
-
     static CompletableFuture<Integer> flowWithId(int id, ExecutorService pool) {
         return firstOperation(id, pool)
                 .thenCompose(__ -> secondOperation(id, pool))
@@ -16,6 +14,25 @@ public class CompletableFutureFlow {
 
     private static CompletableFuture<Integer> firstOperation(int id, ExecutorService pool) {
         return slowOperationAsync(id, 1, pool);
+    }
+
+    private static CompletableFuture<Integer> slowOperationAsync(int flow, int step, ExecutorService pool) {
+        return CompletableFuture.supplyAsync(
+                () -> slowOperation(flow, step),
+                pool
+        );
+    }
+
+    private static int slowOperation(int flow, int step) {
+        System.out.println(String.format("[Flow:%d][Step:%d] - %s", flow, step, Thread.currentThread().getName()));
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().isInterrupted();
+            e.printStackTrace();
+        }
+
+        return flow;
     }
 
     private static CompletableFuture<Integer> secondOperation(int id, ExecutorService pool) {
@@ -32,23 +49,5 @@ public class CompletableFutureFlow {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-    }
-
-    private static int slowOperation(int flow, int step) {
-        System.out.println(String.format("[%d.%d] - %s", flow, step, Thread.currentThread().getName()));
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return flow;
-    }
-
-    private static CompletableFuture<Integer> slowOperationAsync(int flow, int step, ExecutorService pool) {
-        return CompletableFuture.supplyAsync(
-                () -> slowOperation(flow, step),
-                pool
-        );
     }
 }
