@@ -2,39 +2,48 @@ package pl.ciruk.blog.mq;
 
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
-import javax.transaction.Transactional;
 import java.util.function.Consumer;
 
 @Named
 @Transactional
 @lombok.extern.slf4j.Slf4j
 public class MQGateway {
-	@Inject
-	@Named("JmsTemplate")
-	JmsTemplate jmsTemplate;
+    private JmsTemplate jmsTemplate;
 
-	@Inject
-	private MQConfiguration.MQProperties properties;
+    private MQProperties properties;
 
-	@JmsListener(destination = "${pl.ciruk.blog.mq.incoming-queue}", containerFactory = "DefaultJmsListenerContainerFactory")
-	public void onMessage(TextMessage message) throws JMSException {
-		log.info("onMessage");
-		log.debug("onMessage - Message: {}", message);
+    private Consumer<String> messageConsumer;
 
-		Consumer<TextMessage> handler = msg -> {};
+    @Inject
+    public MQGateway(JmsTemplate jmsTemplate, MQProperties properties, @Named("messageConsumer") Consumer<String> messageConsumer) {
+        this.jmsTemplate = jmsTemplate;
+        this.properties = properties;
+        this.messageConsumer = messageConsumer;
+    }
 
-		handler.accept(message);
-	}
+    @JmsListener(destination = "${pl.ciruk.blog.mq.incoming-queue}", containerFactory = "defaultJmsListenerContainerFactory")
+    public void onMessage(TextMessage message) throws JMSException {
+        log.info("onMessage");
+        log.debug("onMessage - Message: {}", message);
 
-	public void send(String message) {
-		log.info("send");
-		log.debug("send - Message: {}", message);
+        try {
+            messageConsumer.accept(message.getText());
+        } catch (JMSException e) {
+            log.error("Cannot consume message: {}", message, e);
+        }
 
-		jmsTemplate.convertAndSend(properties.getOutgoingQueue(), message);
-	}
+    }
+
+    public void send(String message) {
+        log.info("send");
+        log.debug("send - Message: {}", message);
+
+        jmsTemplate.convertAndSend(properties.getOutgoingQueue(), message);
+    }
 }
