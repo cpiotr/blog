@@ -31,7 +31,7 @@ public class MockDestinationIntegrationTest {
     private MockDestination<String> mockDestination;
 
     @Test
-    public void shouldName() throws Exception {
+    public void shouldPrintTwoReceivedMessagesAndRespondToOne() throws Exception {
         mockDestination
                 .whenReceived(messsage -> messsage.equals("Ala"))
                 .thenSend("ResponseQueue", message -> message + " Ma kota");
@@ -39,10 +39,10 @@ public class MockDestinationIntegrationTest {
                 .whenReceived(messsage -> messsage.startsWith("A"))
                 .thenConsume(message -> System.out.println("Received: " + message));
 
-        await().atLeast(1, TimeUnit.SECONDS);
+        await().atLeast(2, TimeUnit.SECONDS);
         jmsTemplate.convertAndSend("RequestQueue", "Ala");
 
-        await().atLeast(1, TimeUnit.SECONDS);
+        await().atLeast(2, TimeUnit.SECONDS);
         jmsTemplate.convertAndSend("RequestQueue", "Arka");
 
         System.out.println(jmsTemplate.receiveAndConvert("ResponseQueue"));
@@ -53,7 +53,7 @@ public class MockDestinationIntegrationTest {
         List<String> receivedMessages = new CopyOnWriteArrayList<>();
 
         @Bean
-        public MockDestination<String> mockDestination(JmsTemplate jmsTemplate) {
+        public Gateway<String> mockDestination(JmsTemplate jmsTemplate) {
             return new MockDestination<>(jmsTemplate, Function.identity());
         }
     }

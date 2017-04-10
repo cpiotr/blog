@@ -3,17 +3,17 @@ package pl.ciruk.blog.jms;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
-import pl.ciruk.blog.noswitch.ConsumerWithPredicates;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Slf4j
-class MockDestination<T> {
-    private final ConsumerWithPredicates<T> listeners = new ConsumerWithPredicates<>();
+class MockDestination<T> implements Gateway<T> {
+    private final List<WhenReceived<T>> listeners = new ArrayList<>();
 
     private final JmsTemplate jmsTemplate;
 
@@ -24,6 +24,16 @@ class MockDestination<T> {
         this.fromTextToMessageConverter = fromTextToMessageConverter;
     }
 
+    @Override
+    public void receive(T message) {
+        listeners.forEach(consumer -> consumer.onMessage(message));
+    }
+
+    @Override
+    public void send(String destination, String message) {
+        jmsTemplate.convertAndSend(destination, message);
+    }
+
     @JmsListener(destination = "RequestQueue", containerFactory = "defaultJmsListenerContainerFactory")
     private void onMessage(TextMessage message) throws JMSException {
         log.info("onMessage");
@@ -32,30 +42,16 @@ class MockDestination<T> {
         try {
             String messageText = message.getText();
 
-            T convertedMessage = fromTextToMessageConverter.apply(messageText);
-
-            listeners.consume(convertedMessage);
+            receive(fromTextToMessageConverter.apply(messageText));
         } catch (JMSException e) {
             log.error("Cannot consume message: {}", message, e);
         }
     }
 
-    public void registerResponse(Predicate<T> messageMatcher, ThenSend<T> thenSend) {
-        listeners.add(
-                messageMatcher,
-                message -> jmsTemplate.convertAndSend(thenSend.getDestination(), thenSend.apply(message)));
-    }
-
-    public void registerResponse(Predicate<T> messageMatcher, Runnable thenDo) {
-        listeners.add(messageMatcher, thenDo);
-    }
-
-    public void registerResponse(Predicate<T> messageMatcher, Consumer<T> thenConsume) {
-        listeners.add(messageMatcher, thenConsume);
-    }
-
     public WhenReceived<T> whenReceived(Predicate<T> messageMatcher) {
-        return new WhenReceived<>(this, messageMatcher);
+        WhenReceived<T> whenReceived = new WhenReceived<>(this, messageMatcher);
+        listeners.add(whenReceived);
+        return whenReceived;
     }
 
 }
