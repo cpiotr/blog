@@ -1,9 +1,6 @@
 package pl.ciruk.blog.jitest;
 
-import com.google.common.base.Stopwatch;
 import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
 
 public class EmptyLoopTest {
     @Test(timeout = 100_000L)
@@ -21,9 +18,9 @@ public class EmptyLoopTest {
     }
 
     @Test(timeout = 100_000L)
-    public void shouldEliminateEmptyLongLoop() throws Exception {
+    public void shouldEliminateEmptyDoubleLoop() throws Exception {
         for (int i = 0; i < 100; i++) {
-            runAndMeasureTime(this::longLoop);
+            runAndMeasureTime(this::doubleLoop);
         }
     }
 
@@ -34,21 +31,33 @@ public class EmptyLoopTest {
     }
 
     private void intToLongLoop() {
-        for (int i = 0; i < 2_000_000_000L; i++) {
+        for (int i = 0; i < 200_000_000L; i++) {
             // no-op
         }
     }
 
+    private void doubleLoop() {
+        for (double i = 0.0; i < 20_000_000.0; i+=1.0) {
+            // no-op
+        }
+    }
+
+    @Test(timeout = 100_000L)
+    public void shouldEliminateEmptyLongLoop() throws Exception {
+        for (int i = 0; i < 100; i++) {
+            runAndMeasureTime(this::longLoop);
+        }
+    }
+
     private void longLoop() {
-        for (long i = 0; i < 2_000_000_000L; i++) {
+        for (long i = 0; i < 20_000_000L; i++) {
             // no-op
         }
     }
 
     private void runAndMeasureTime(Runnable runnable) {
-        Stopwatch stopwatch = Stopwatch.createStarted();
+        long start = System.currentTimeMillis();
         runnable.run();
-        stopwatch.stop();
-        System.out.printf("%d ms%n", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        System.out.printf("%d ms%n", (System.currentTimeMillis() - start));
     }
 }

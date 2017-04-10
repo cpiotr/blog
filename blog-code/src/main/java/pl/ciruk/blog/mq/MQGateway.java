@@ -1,5 +1,6 @@
 package pl.ciruk.blog.mq;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +13,7 @@ import java.util.function.Consumer;
 
 @Named
 @Transactional
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class MQGateway {
     private JmsTemplate jmsTemplate;
 

@@ -1,6 +1,5 @@
 package pl.ciruk.blog.mq;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +27,6 @@ import static org.junit.Assert.fail;
 @SpringBootTest(classes = {MQGatewayIntegrationTest.TestConfiguration.class, MQGateway.class, MQProperties.class})
 @EnableAutoConfiguration
 @EnableJms
-@Slf4j
 public class MQGatewayIntegrationTest {
     @Inject
     JmsTemplate jmsTemplate;
@@ -40,11 +38,12 @@ public class MQGatewayIntegrationTest {
     String queue;
 
     @Test
-	public void shouldReceiveMessageInListener() throws Exception {
+    public void shouldReceiveMessageInListener() throws Exception {
         String message = "This is a test message";
 
         jmsTemplate.convertAndSend(queue, message);
-        await().atMost(5, TimeUnit.SECONDS).until(configuration::hasReceivedMessages);
+        await().atMost(5, TimeUnit.SECONDS)
+                .until(configuration::hasReceivedMessages);
 
         assertThat(configuration.receivedMessages, contains(message));
     }
