@@ -12,18 +12,18 @@ import org.springframework.test.context.junit4.SpringRunner;
 import pl.ciruk.blog.mq.MQConfiguration;
 
 import javax.inject.Inject;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import static org.awaitility.Awaitility.await;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {MockDestinationIntegrationTest.TestConfiguration.class})
 @EnableAutoConfiguration
 @EnableJms
 public class MockDestinationIntegrationTest {
+    private static final String FIRST_MESSAGE = "Alice";
+    private static final String SECOND_MESSAGE = "Another";
+    private static final String RESPONSE_QUEUE = "ResponseQueue";
+
     @Inject
     private JmsTemplate jmsTemplate;
 
@@ -33,27 +33,35 @@ public class MockDestinationIntegrationTest {
     @Test
     public void shouldPrintTwoReceivedMessagesAndRespondToOne() throws Exception {
         mockDestination
-                .whenReceived(messsage -> messsage.equals("Ala"))
-                .thenSend("ResponseQueue", message -> message + " Ma kota");
+                .whenReceived(message -> message.equals(FIRST_MESSAGE))
+                .thenSend(RESPONSE_QUEUE, message -> message + " acknowledged");
         mockDestination
-                .whenReceived(messsage -> messsage.startsWith("A"))
+                .whenReceived(message -> message.startsWith("A"))
                 .thenConsume(message -> System.out.println("Received: " + message));
 
-        await().atLeast(2, TimeUnit.SECONDS);
-        jmsTemplate.convertAndSend("RequestQueue", "Ala");
+        send(FIRST_MESSAGE);
+        send(SECOND_MESSAGE);
 
-        await().atLeast(2, TimeUnit.SECONDS);
-        jmsTemplate.convertAndSend("RequestQueue", "Arka");
+        System.out.println(jmsTemplate.receiveAndConvert(RESPONSE_QUEUE));
+    }
 
-        System.out.println(jmsTemplate.receiveAndConvert("ResponseQueue"));
+    private void send(String firstMessage) {
+        waitAMoment();
+        jmsTemplate.convertAndSend("RequestQueue", firstMessage);
+    }
+
+    private void waitAMoment() {
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
     }
 
     @Configuration
     static class TestConfiguration extends MQConfiguration {
-        List<String> receivedMessages = new CopyOnWriteArrayList<>();
-
         @Bean
-        public Gateway<String> mockDestination(JmsTemplate jmsTemplate) {
+        Gateway<String> mockDestination(JmsTemplate jmsTemplate) {
             return new MockDestination<>(jmsTemplate, Function.identity());
         }
     }
